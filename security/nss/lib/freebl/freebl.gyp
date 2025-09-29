@@ -773,10 +773,12 @@
       '/usr/local/include',
     ],
     'libraries': [
+      '-L/usr/local/lib',
       '-loqs',
     ],
-    'library_dirs': [
-      '/usr/local/lib',
+    'ldflags': [
+      '-L/usr/local/lib',
+      '-loqs',
     ],
     'defines': [
       'SHLIB_SUFFIX=\"<(dll_suffix)\"',
