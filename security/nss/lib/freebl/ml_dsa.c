@@ -228,7 +228,7 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
             ctx->messageBuffer->data, ctx->messageLen,
             signature->data, signature->len,
             ctx->sgnCtx->data, ctx->sgnCtx->len,
-            ctx->pubKey->data
+            (const unsigned char *)ctx->pubKey
         );
     } else {
         /* Standard version without context string */
@@ -236,7 +236,7 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
             oqs_sig,
             ctx->messageBuffer->data, ctx->messageLen,
             signature->data, signature->len,
-            ctx->pubKey->data
+            (const unsigned char *)ctx->pubKey
         );
     }
     
