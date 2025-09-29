@@ -654,6 +654,92 @@ cert_GetKeyID(CERTCertificate *cert)
     return (SECSuccess);
 }
 
+/*
+ * Parse alternative signature extensions (2.5.29.73 and 2.5.29.74)
+ * for hybrid PQC certificate support.
+ * These extensions allow certificates to carry both a classical signature
+ * (in the standard signatureAlgorithm/signatureValue fields) and a
+ * post-quantum signature (in these extensions).
+ * 
+ * Refs: EJBCA Hybrid Signatures, IETF LAMPS draft
+ */
+static SECStatus
+cert_ParseAltSignatureExtensions(CERTCertificate *cert)
+{
+    SECStatus rv;
+    SECItem altSigAlgItem = { siBuffer, NULL, 0 };
+    SECItem altSigValueItem = { siBuffer, NULL, 0 };
+    SECAlgorithmID *altSigAlg = NULL;
+    
+    if (!cert || !cert->arena) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    
+    /* Initialize alt-sig fields */
+    cert->hasAltSignature = PR_FALSE;
+    cert->altSignatureAlgorithm = NULL;
+    cert->altSignatureValue.data = NULL;
+    cert->altSignatureValue.len = 0;
+    
+    /* Try to find extension 2.5.29.73 (Alternative Signature Algorithm) */
+    rv = CERT_FindCertExtension(cert, SEC_OID_X509_ALT_SIGNATURE_ALGORITHM,
+                                &altSigAlgItem);
+    if (rv != SECSuccess) {
+        /* Extension not present - this is OK, not all certs have alt-sig */
+        return SECSuccess;
+    }
+    
+    /* Try to find extension 2.5.29.74 (Alternative Signature Value) */
+    rv = CERT_FindCertExtension(cert, SEC_OID_X509_ALT_SIGNATURE_VALUE,
+                                &altSigValueItem);
+    if (rv != SECSuccess) {
+        /* If 73 is present, 74 MUST also be present */
+        PORT_Free(altSigAlgItem.data);
+        PORT_SetError(SEC_ERROR_EXTENSION_VALUE_INVALID);
+        return SECFailure;
+    }
+    
+    /* Decode the AlgorithmIdentifier from extension 73 */
+    altSigAlg = PORT_ArenaZNew(cert->arena, SECAlgorithmID);
+    if (!altSigAlg) {
+        PORT_Free(altSigAlgItem.data);
+        PORT_Free(altSigValueItem.data);
+        return SECFailure;
+    }
+    
+    rv = SEC_QuickDERDecodeItem(cert->arena, altSigAlg,
+                               SEC_ASN1_GET(SECOID_AlgorithmIDTemplate),
+                               &altSigAlgItem);
+    PORT_Free(altSigAlgItem.data);
+    
+    if (rv != SECSuccess) {
+        PORT_Free(altSigValueItem.data);
+        PORT_SetError(SEC_ERROR_EXTENSION_VALUE_INVALID);
+        return SECFailure;
+    }
+    
+    /* Decode the BIT STRING from extension 74 */
+    /* Extension value is OCTET STRING containing BIT STRING */
+    SECItem decodedBitString = { siBuffer, NULL, 0 };
+    rv = SEC_QuickDERDecodeItem(cert->arena, &decodedBitString,
+                               SEC_ASN1_GET(SEC_BitStringTemplate),
+                               &altSigValueItem);
+    PORT_Free(altSigValueItem.data);
+    
+    if (rv != SECSuccess) {
+        PORT_SetError(SEC_ERROR_EXTENSION_VALUE_INVALID);
+        return SECFailure;
+    }
+    
+    /* Store the parsed values */
+    cert->altSignatureAlgorithm = altSigAlg;
+    cert->altSignatureValue = decodedBitString;
+    cert->hasAltSignature = PR_TRUE;
+    
+    return SECSuccess;
+}
+
 static PRBool
 cert_IsRootCert(CERTCertificate *cert)
 {
@@ -806,6 +892,13 @@ CERT_DecodeDERCertificate(SECItem *derSignedCert, PRBool copyDER,
 
     /* determine if this is a root cert */
     cert->isRoot = cert_IsRootCert(cert);
+
+    /* Parse alternative signature extensions (for hybrid PQC) */
+    rv = cert_ParseAltSignatureExtensions(cert);
+    if (rv != SECSuccess) {
+        /* Non-fatal: Alt-sig extensions are optional */
+        cert->hasAltSignature = PR_FALSE;
+    }
 
     /* initialize the certType */
     rv = cert_GetCertType(cert);

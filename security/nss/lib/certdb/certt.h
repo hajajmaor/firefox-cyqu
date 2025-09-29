@@ -274,6 +274,11 @@ struct CERTCertificateStr {
     CERTAuthKeyID *authKeyID; /* x509v3 authority key identifier */
     PRBool isRoot;            /* cert is the end of a chain */
 
+    /* Alternative Signature fields for hybrid PQC certificates */
+    SECAlgorithmID *altSignatureAlgorithm; /* Algorithm OID from ext 2.5.29.73 */
+    SECItem altSignatureValue;             /* Signature bits from ext 2.5.29.74 */
+    PRBool hasAltSignature;                /* TRUE if alt-sig extensions present */
+
     /* these fields are used by client GUI code to keep track of ssl sockets
      * that are blocked waiting on GUI feedback related to this cert.
      * XXX - these should be moved into some sort of application specific
