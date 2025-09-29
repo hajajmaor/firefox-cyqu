@@ -71,6 +71,15 @@
     # values of KYBER_K.
     'KYBER_K=3',
   ],
+  'include_dirs': [
+    '/usr/local/include',
+  ],
+  'libraries': [
+    '-loqs',
+  ],
+  'library_dirs': [
+    '/usr/local/lib',
+  ],
   'conditions': [
     [ 'OS=="linux" or OS=="android"', {
       'conditions': [
