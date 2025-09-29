@@ -134,4 +134,30 @@ interface nsITransportSecurityInfo : nsISupports {
      * The id used to uniquely identify the connection to the peer.
      */
     readonly attribute ACString peerId;
+
+    /**
+     * Post-Quantum cryptography protection status for this connection.
+     * Returns one of:
+     *   "pq-protected"     - All certificates have valid ML-DSA signatures
+     *   "pq-missing"       - Some/all certificates lack PQ signatures  
+     *   "pq-verify-failed" - PQ signature verification failed
+     *   "pq-disabled"      - PQ verification disabled in preferences
+     *   "pq-unknown"       - Status not yet determined
+     */
+    readonly attribute ACString pqProtectionStatus;
+
+    /**
+     * Human-readable description of PQ protection status.
+     * Examples:
+     *   "Protected by ML-DSA-65"
+     *   "Not PQ: missing at Intermediate CA"
+     *   "Not PQ: verification failed"
+     */
+    readonly attribute ACString pqStatusMessage;
+
+    /**
+     * True if connection is protected by post-quantum cryptography.
+     * This means all certificates in the chain have valid ML-DSA signatures.
+     */
+    readonly attribute boolean isPQProtected;
 };

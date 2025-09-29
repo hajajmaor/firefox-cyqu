@@ -23,6 +23,7 @@
 #include "nsIX509Cert.h"
 #include "secerr.h"
 #include "ssl.h"
+#include "mozilla/Preferences.h"
 
 #include "mozilla/ipc/IPDLParamTraits.h"
 
@@ -1115,6 +1116,66 @@ TransportSecurityInfo::GetResumed(bool* aResumed) {
 NS_IMETHODIMP
 TransportSecurityInfo::GetPeerId(nsACString& aResult) {
   aResult.Assign(mPeerId);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetPqProtectionStatus(nsACString& aResult) {
+  // TODO: Implement full PQ verification logic
+  // For now, return "pq-unknown" as verification is stubbed
+  
+  // Check if PQ verification is enabled
+  bool preferAltSig = mozilla::Preferences::GetBool("security.pq.prefer_alt_sig", true);
+  if (!preferAltSig) {
+    aResult.AssignLiteral("pq-disabled");
+    return NS_OK;
+  }
+  
+  // Check if we have a certificate chain
+  if (mSucceededCertChain.IsEmpty() || !mServerCert) {
+    aResult.AssignLiteral("pq-unknown");
+    return NS_OK;
+  }
+  
+  // TODO: Call NSS CERT_GetPQVerificationStatus() once liboqs is enabled
+  // For now, check if any cert has alt-sig extensions (indicates PQ-capable)
+  
+  // Placeholder logic: Since ML-DSA verification is stubbed,
+  // we report "pq-missing" for all connections
+  // Once liboqs is integrated, this will perform real verification
+  aResult.AssignLiteral("pq-missing");
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetPqStatusMessage(nsACString& aResult) {
+  nsAutoCString status;
+  GetPqProtectionStatus(status);
+  
+  if (status.EqualsLiteral("pq-protected")) {
+    aResult.AssignLiteral("Protected by ML-DSA-65");
+  } else if (status.EqualsLiteral("pq-disabled")) {
+    aResult.AssignLiteral("Post-quantum verification disabled");
+  } else if (status.EqualsLiteral("pq-verify-failed")) {
+    aResult.AssignLiteral("Not PQ: signature verification failed");
+  } else if (status.EqualsLiteral("pq-missing")) {
+    aResult.AssignLiteral("Classical cryptography only (no PQ signatures)");
+  } else {
+    aResult.AssignLiteral("Post-quantum status unknown");
+  }
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetIsPQProtected(bool* aIsPQProtected) {
+  NS_ENSURE_ARG_POINTER(aIsPQProtected);
+  
+  nsAutoCString status;
+  GetPqProtectionStatus(status);
+  *aIsPQProtected = status.EqualsLiteral("pq-protected");
+  
   return NS_OK;
 }
 
