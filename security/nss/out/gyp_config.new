@@ -1,0 +1,5 @@
+CC=''
+CCC=''
+CXX=''
+target_arch='x64'
+'--depth=/home/kono/projects/cyqu/firefox-cyqu/security/nss' '--generator-output=.' '-Dpython=python3' '-Dtarget_arch=x64' '-Denable_sslkeylogfile=1' '-Dnss_dist_dir=/home/kono/projects/cyqu/firefox-cyqu/security/dist'

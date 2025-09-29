@@ -1962,6 +1962,12 @@ SECStatus MLDSA_VerifyInit(MLDSAPublicKey *key, const SECItem *sgnCtx,
 SECStatus MLDSA_VerifyUpdate(MLDSAContext *ctx, const SECItem *data);
 SECStatus MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature);
 
+/* One-shot ML-DSA verification (for certificate alt-sig) */
+SECStatus MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
+                      const unsigned char *message, size_t messageLen,
+                      const unsigned char *signature, size_t signatureLen,
+                      const unsigned char *ctx, size_t ctxLen);
+
 SEC_END_PROTOS
 
 #endif /* _BLAPI_H_ */

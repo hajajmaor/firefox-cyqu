@@ -21,7 +21,8 @@
 #include "secrng.h"
 #include "ml_dsat.h"
 
-/* include other ml-dsa library specific includes here */
+/* Include liboqs for ML-DSA (Dilithium) verification */
+#include <oqs/oqs.h>
 
 /* this is private to this function and can be changed at will */
 struct MLDSAContextStr {
@@ -30,6 +31,12 @@ struct MLDSAContextStr {
     MLDSAPublicKey *pubKey;
     CK_HEDGE_TYPE hedgeType;
     CK_ML_DSA_PARAMETER_SET_TYPE paramSet;
+    /* Buffer for streaming interface */
+    SECItem *messageBuffer;
+    size_t messageLen;
+    size_t messageCapacity;
+    /* Context string for signature verification */
+    SECItem *sgnCtx;
     /* other ml-dsa lowelevel library require values and contexts */
 };
 
@@ -89,21 +96,248 @@ MLDSA_SignFinal(MLDSAContext *ctx, SECItem *signature)
 SECStatus
 MLDSA_VerifyInit(MLDSAPublicKey *key, const SECItem *sgnCtx, MLDSAContext **ctx)
 {
-    PORT_SetError(SEC_ERROR_INVALID_ARGS);
-    return SECFailure;
+    MLDSAContext *context = NULL;
+    PLArenaPool *arena = NULL;
+    
+    if (key == NULL || ctx == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    
+    /* Create arena for context */
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    if (arena == NULL) {
+        return SECFailure;
+    }
+    
+    /* Allocate context */
+    context = PORT_ArenaZNew(arena, MLDSAContext);
+    if (context == NULL) {
+        PORT_FreeArena(arena, PR_TRUE);
+        return SECFailure;
+    }
+    
+    context->arena = arena;
+    context->pubKey = key;
+    context->messageLen = 0;
+    context->messageCapacity = 8192; /* Initial buffer size */
+    
+    /* Allocate message buffer */
+    context->messageBuffer = PORT_ArenaZNew(arena, SECItem);
+    if (context->messageBuffer == NULL) {
+        PORT_FreeArena(arena, PR_TRUE);
+        return SECFailure;
+    }
+    
+    context->messageBuffer->data = PORT_ArenaAlloc(arena, context->messageCapacity);
+    if (context->messageBuffer->data == NULL) {
+        PORT_FreeArena(arena, PR_TRUE);
+        return SECFailure;
+    }
+    
+    /* Store context string if provided */
+    if (sgnCtx != NULL && sgnCtx->data != NULL && sgnCtx->len > 0) {
+        context->sgnCtx = PORT_ArenaZNew(arena, SECItem);
+        if (context->sgnCtx == NULL) {
+            PORT_FreeArena(arena, PR_TRUE);
+            return SECFailure;
+        }
+        context->sgnCtx->data = PORT_ArenaAlloc(arena, sgnCtx->len);
+        if (context->sgnCtx->data == NULL) {
+            PORT_FreeArena(arena, PR_TRUE);
+            return SECFailure;
+        }
+        PORT_Memcpy(context->sgnCtx->data, sgnCtx->data, sgnCtx->len);
+        context->sgnCtx->len = sgnCtx->len;
+    } else {
+        context->sgnCtx = NULL;
+    }
+    
+    *ctx = context;
+    return SECSuccess;
 }
 
 SECStatus
 MLDSA_VerifyUpdate(MLDSAContext *ctx, const SECItem *data)
 {
     /* like Sign, a streaming interface some rules about buffering */
-    PORT_SetError(SEC_ERROR_INVALID_ARGS);
-    return SECFailure;
+    if (ctx == NULL || data == NULL || data->data == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    
+    /* Check if we need to grow the buffer */
+    if (ctx->messageLen + data->len > ctx->messageCapacity) {
+        size_t newCapacity = ctx->messageCapacity * 2;
+        while (newCapacity < ctx->messageLen + data->len) {
+            newCapacity *= 2;
+        }
+        
+        unsigned char *newData = PORT_ArenaAlloc(ctx->arena, newCapacity);
+        if (newData == NULL) {
+            PORT_SetError(SEC_ERROR_NO_MEMORY);
+            return SECFailure;
+        }
+        
+        /* Copy existing data */
+        if (ctx->messageLen > 0) {
+            PORT_Memcpy(newData, ctx->messageBuffer->data, ctx->messageLen);
+        }
+        
+        ctx->messageBuffer->data = newData;
+        ctx->messageCapacity = newCapacity;
+    }
+    
+    /* Append new data */
+    PORT_Memcpy(ctx->messageBuffer->data + ctx->messageLen, data->data, data->len);
+    ctx->messageLen += data->len;
+    
+    return SECSuccess;
 }
 
 SECStatus
 MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
 {
-    PORT_SetError(SEC_ERROR_INVALID_ARGS);
-    return SECFailure;
+    OQS_SIG *oqs_sig = NULL;
+    OQS_STATUS oqs_status;
+    const char *alg_name = NULL;
+    SECStatus rv = SECFailure;
+    
+    if (ctx == NULL || signature == NULL || signature->data == NULL ||
+        ctx->pubKey == NULL || ctx->pubKey->data == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    
+    /* Determine algorithm name based on parameter set */
+    /* For now, we only support ML-DSA-65 (Dilithium3) */
+    /* TODO: Support other parameter sets based on ctx->paramSet or key size */
+    if (ctx->pubKey->len == ML_DSA_65_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_65;
+    } else if (ctx->pubKey->len == ML_DSA_44_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_44;
+    } else if (ctx->pubKey->len == ML_DSA_87_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_87;
+    } else {
+        PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+        goto cleanup;
+    }
+    
+    /* Initialize liboqs signature object */
+    oqs_sig = OQS_SIG_new(alg_name);
+    if (oqs_sig == NULL) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        goto cleanup;
+    }
+    
+    /* Call liboqs verify function */
+    if (ctx->sgnCtx != NULL && ctx->sgnCtx->len > 0) {
+        /* Use context string version */
+        oqs_status = OQS_SIG_verify_with_ctx_str(
+            oqs_sig,
+            ctx->messageBuffer->data, ctx->messageLen,
+            signature->data, signature->len,
+            ctx->sgnCtx->data, ctx->sgnCtx->len,
+            ctx->pubKey->data
+        );
+    } else {
+        /* Standard version without context string */
+        oqs_status = OQS_SIG_verify(
+            oqs_sig,
+            ctx->messageBuffer->data, ctx->messageLen,
+            signature->data, signature->len,
+            ctx->pubKey->data
+        );
+    }
+    
+    if (oqs_status == OQS_SUCCESS) {
+        rv = SECSuccess;
+    } else {
+        PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
+        rv = SECFailure;
+    }
+    
+cleanup:
+    if (oqs_sig != NULL) {
+        OQS_SIG_free(oqs_sig);
+    }
+    
+    /* Free context arena */
+    if (ctx->arena != NULL) {
+        PORT_FreeArena(ctx->arena, PR_TRUE);
+    }
+    
+    return rv;
+}
+
+/*
+ * Simple one-shot ML-DSA verification function for certificate alt-sig
+ * This is a convenience wrapper for verifying alternative signatures in X.509 certificates.
+ * 
+ * @param pubKey The public key (raw bytes, length determines which ML-DSA variant)
+ * @param pubKeyLen Length of public key in bytes
+ * @param message The message to verify (TBS certificate bytes)
+ * @param messageLen Length of message
+ * @param signature The ML-DSA signature
+ * @param signatureLen Length of signature  
+ * @param ctx Context string (can be NULL)
+ * @param ctxLen Length of context string (0 if NULL)
+ * @return SECSuccess if signature valid, SECFailure otherwise
+ */
+SECStatus
+MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
+             const unsigned char *message, size_t messageLen,
+             const unsigned char *signature, size_t signatureLen,
+             const unsigned char *ctx, size_t ctxLen)
+{
+    OQS_SIG *oqs_sig = NULL;
+    OQS_STATUS oqs_status;
+    const char *alg_name = NULL;
+    SECStatus rv = SECFailure;
+    
+    if (pubKey == NULL || message == NULL || signature == NULL) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    
+    /* Determine algorithm based on public key length */
+    if (pubKeyLen == ML_DSA_65_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_65;
+    } else if (pubKeyLen == ML_DSA_44_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_44;
+    } else if (pubKeyLen == ML_DSA_87_PUBLICKEY_LEN) {
+        alg_name = OQS_SIG_alg_ml_dsa_87;
+    } else {
+        PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+        return SECFailure;
+    }
+    
+    /* Initialize liboqs signature object */
+    oqs_sig = OQS_SIG_new(alg_name);
+    if (oqs_sig == NULL) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+    
+    /* Call liboqs verify function */
+    if (ctx != NULL && ctxLen > 0) {
+        oqs_status = OQS_SIG_verify_with_ctx_str(
+            oqs_sig, message, messageLen, signature, signatureLen,
+            ctx, ctxLen, pubKey
+        );
+    } else {
+        oqs_status = OQS_SIG_verify(
+            oqs_sig, message, messageLen, signature, signatureLen, pubKey
+        );
+    }
+    
+    if (oqs_status == OQS_SUCCESS) {
+        rv = SECSuccess;
+    } else {
+        PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
+        rv = SECFailure;
+    }
+    
+    OQS_SIG_free(oqs_sig);
+    return rv;
 }

@@ -1,0 +1,7 @@
+CC=''
+CCC=''
+CXX=''
+target_arch='x64'
+nspr_cflags=' '
+nspr_cxxflags=' '
+nspr_ldflags=' '
