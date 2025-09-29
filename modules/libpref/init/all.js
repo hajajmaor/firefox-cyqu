@@ -58,6 +58,15 @@ pref("security.remote_settings.intermediates.parallel_downloads", 8);
 
 pref("security.remote_settings.crlite_filters.enabled", true);
 
+// Post-Quantum Cryptography (PQC) hybrid signature preferences
+// When true, prefer and display PQ signature verification status
+pref("security.pq.prefer_alt_sig", true);
+// When true, fail connections that don't have valid PQ signatures
+// (default false - classical signature is authoritative)
+pref("security.pq.require_alt_sig", false);
+// Show PQ protection indicator in browser UI
+pref("security.pq.show_ui_indicator", true);
+
 pref("security.osreauthenticator.blank_password", false);
 pref("security.osreauthenticator.password_last_changed_lo", 0);
 pref("security.osreauthenticator.password_last_changed_hi", 0);
