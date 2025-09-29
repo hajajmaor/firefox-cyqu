@@ -1,0 +1,3 @@
+[submodule "security/third_party/liboqs"]
+	path = security/third_party/liboqs
+	url = https://github.com/open-quantum-safe/liboqs
