@@ -22,7 +22,17 @@
 #include "ml_dsat.h"
 
 /* Include liboqs for ML-DSA (Dilithium) verification */
-#include <oqs/oqs.h>
+// TEMPORARILY DISABLED: liboqs not yet installed
+// #include <oqs/oqs.h>
+
+/* Stub definitions to allow compilation without liboqs */
+#define OQS_SUCCESS 0
+#define OQS_ERROR 1
+typedef int OQS_STATUS;
+typedef struct OQS_SIG OQS_SIG;
+#define OQS_SIG_alg_ml_dsa_44 "ML-DSA-44"
+#define OQS_SIG_alg_ml_dsa_65 "ML-DSA-65"
+#define OQS_SIG_alg_ml_dsa_87 "ML-DSA-87"
 
 /* this is private to this function and can be changed at will */
 struct MLDSAContextStr {
@@ -105,7 +115,7 @@ MLDSA_VerifyInit(MLDSAPublicKey *key, const SECItem *sgnCtx, MLDSAContext **ctx)
     }
     
     /* Create arena for context */
-    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(2048); /* DER_DEFAULT_CHUNKSIZE */
     if (arena == NULL) {
         return SECFailure;
     }
@@ -204,14 +214,16 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
     SECStatus rv = SECFailure;
     
     if (ctx == NULL || signature == NULL || signature->data == NULL ||
-        ctx->pubKey == NULL || ctx->pubKey->data == NULL) {
+        ctx->pubKey == NULL) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
     
     /* Determine algorithm name based on parameter set */
-    /* For now, we only support ML-DSA-65 (Dilithium3) */
-    /* TODO: Support other parameter sets based on ctx->paramSet or key size */
+    /* STUB: Without liboqs, we can't access key structure properly */
+    alg_name = OQS_SIG_alg_ml_dsa_65; /* default */
+    
+    /* TODO: When liboqs is available, determine from key:
     if (ctx->pubKey->len == ML_DSA_65_PUBLICKEY_LEN) {
         alg_name = OQS_SIG_alg_ml_dsa_65;
     } else if (ctx->pubKey->len == ML_DSA_44_PUBLICKEY_LEN) {
@@ -222,17 +234,22 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
         PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
         goto cleanup;
     }
+    */
     
-    /* Initialize liboqs signature object */
+    /* TODO: Initialize liboqs signature object */
+    /* STUB: liboqs not available yet */
+    (void)alg_name; /* unused without liboqs */
+    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+    rv = SECFailure;
+    
+    /* When liboqs is available, uncomment:
     oqs_sig = OQS_SIG_new(alg_name);
     if (oqs_sig == NULL) {
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         goto cleanup;
     }
     
-    /* Call liboqs verify function */
     if (ctx->sgnCtx != NULL && ctx->sgnCtx->len > 0) {
-        /* Use context string version */
         oqs_status = OQS_SIG_verify_with_ctx_str(
             oqs_sig,
             ctx->messageBuffer->data, ctx->messageLen,
@@ -241,7 +258,6 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
             ctx->pubKey->data
         );
     } else {
-        /* Standard version without context string */
         oqs_status = OQS_SIG_verify(
             oqs_sig,
             ctx->messageBuffer->data, ctx->messageLen,
@@ -256,11 +272,11 @@ MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature)
         PORT_SetError(SEC_ERROR_BAD_SIGNATURE);
         rv = SECFailure;
     }
+    */
     
 cleanup:
-    if (oqs_sig != NULL) {
-        OQS_SIG_free(oqs_sig);
-    }
+    /* TODO: Free liboqs object when available */
+    /* if (oqs_sig != NULL) { OQS_SIG_free(oqs_sig); } */
     
     /* Free context arena */
     if (ctx->arena != NULL) {
@@ -290,10 +306,8 @@ MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
              const unsigned char *signature, size_t signatureLen,
              const unsigned char *ctx, size_t ctxLen)
 {
-    OQS_SIG *oqs_sig = NULL;
-    OQS_STATUS oqs_status;
+    /* STUB: Variables unused without liboqs */
     const char *alg_name = NULL;
-    SECStatus rv = SECFailure;
     
     if (pubKey == NULL || message == NULL || signature == NULL) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
@@ -301,6 +315,10 @@ MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
     }
     
     /* Determine algorithm based on public key length */
+    /* STUB: For now just use default */
+    alg_name = OQS_SIG_alg_ml_dsa_65;
+    
+    /* TODO: When liboqs is available:
     if (pubKeyLen == ML_DSA_65_PUBLICKEY_LEN) {
         alg_name = OQS_SIG_alg_ml_dsa_65;
     } else if (pubKeyLen == ML_DSA_44_PUBLICKEY_LEN) {
@@ -311,15 +329,25 @@ MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
         PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
         return SECFailure;
     }
+    */
     
-    /* Initialize liboqs signature object */
+    /* TODO: Initialize liboqs signature object */
+    /* STUB: liboqs not available yet */
+    (void)alg_name; /* unused */
+    (void)message; (void)messageLen;
+    (void)signature; (void)signatureLen;
+    (void)pubKey; (void)ctx; (void)ctxLen;
+    
+    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+    return SECFailure;
+    
+    /* When liboqs is available, uncomment:
     oqs_sig = OQS_SIG_new(alg_name);
     if (oqs_sig == NULL) {
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
     }
     
-    /* Call liboqs verify function */
     if (ctx != NULL && ctxLen > 0) {
         oqs_status = OQS_SIG_verify_with_ctx_str(
             oqs_sig, message, messageLen, signature, signatureLen,
@@ -340,4 +368,5 @@ MLDSA_Verify(const unsigned char *pubKey, size_t pubKeyLen,
     
     OQS_SIG_free(oqs_sig);
     return rv;
+    */
 }
