@@ -540,6 +540,10 @@ typedef enum {
     SEC_OID_ML_DSA_65 = 392,
     SEC_OID_ML_DSA_87 = 393,
 
+    /* X.509v3 Alternative Signature Extensions (for hybrid PQC signatures) */
+    SEC_OID_X509_ALT_SIGNATURE_ALGORITHM = 394, /* 2.5.29.73 */
+    SEC_OID_X509_ALT_SIGNATURE_VALUE = 395,     /* 2.5.29.74 */
+
     SEC_OID_TOTAL
 } SECOidTag;
 

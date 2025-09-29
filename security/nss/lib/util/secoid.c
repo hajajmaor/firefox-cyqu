@@ -365,6 +365,10 @@ CONST_OID x509ExtKeyUsage[] = { ID_CE_OID, 37 };
 CONST_OID x509FreshestCRL[] = { ID_CE_OID, 46 };
 CONST_OID x509InhibitAnyPolicy[] = { ID_CE_OID, 54 };
 
+/* Alternative Signature Extensions for hybrid PQC signatures (EJBCA/LAMPS) */
+CONST_OID x509AltSignatureAlgorithm[] = { ID_CE_OID, 73 };
+CONST_OID x509AltSignatureValue[] = { ID_CE_OID, 74 };
+
 CONST_OID x509CertificatePoliciesAnyPolicy[] = { ID_CE_OID, 32, 0 };
 CONST_OID x509ExtKeyUsageAnyUsage[] = { ID_CE_OID, 37, 0 };
 
@@ -1912,6 +1916,14 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
     OD(mlDsa44, SEC_OID_ML_DSA_44, "ML-DSA-44", CKM_ML_DSA, INVALID_CERT_EXTENSION),
     OD(mlDsa65, SEC_OID_ML_DSA_65, "ML-DSA-65", CKM_ML_DSA, INVALID_CERT_EXTENSION),
     OD(mlDsa87, SEC_OID_ML_DSA_87, "ML-DSA-87", CKM_ML_DSA, INVALID_CERT_EXTENSION),
+
+    /* Alternative Signature Extensions (EJBCA/LAMPS hybrid PQC) */
+    OD(x509AltSignatureAlgorithm, SEC_OID_X509_ALT_SIGNATURE_ALGORITHM,
+       "X509v3 Alternative Signature Algorithm", CKM_INVALID_MECHANISM,
+       SUPPORTED_CERT_EXTENSION),
+    OD(x509AltSignatureValue, SEC_OID_X509_ALT_SIGNATURE_VALUE,
+       "X509v3 Alternative Signature Value", CKM_INVALID_MECHANISM,
+       SUPPORTED_CERT_EXTENSION),
 };
 
 /* PRIVATE EXTENDED SECOID Table
