@@ -642,13 +642,33 @@ extern SECStatus CERT_VerifySignedDataWithPublicKey(const CERTSignedData *sd,
                                                     void *wincx);
 
 /*
-** NEW FUNCTIONS with new bit-field-FIELD SECCertificateUsage - please use
-** verify a certificate by checking validity times against a certain time,
-** that we trust the issuer, and that the signature on the certificate is
-** valid.
-**	"cert" the certificate to verify
-**	"checkSig" only check signatures if true
-*/
+ ** Verify alternative (post-quantum) signature on a certificate
+ ** Used for hybrid PQC certificates with extensions 2.5.29.73/74
+ */
+extern SECStatus CERT_VerifyAltSignature(CERTCertificate *cert,
+                                         CERTCertificate *issuerCert);
+
+/*
+ ** Verify alternative signatures on entire certificate chain
+ ** Returns SECSuccess only if ALL certs have valid ML-DSA alt-sigs
+ */
+extern SECStatus CERT_VerifyAltSignatureChain(CERTCertList *certList);
+
+/*
+ ** Get PQ verification status for a certificate chain
+ ** Returns human-readable string and sets isPQProtected flag
+ */
+extern const char *CERT_GetPQVerificationStatus(CERTCertList *certList,
+                                                PRBool *isPQProtected);
+
+/*
+ ** NEW FUNCTIONS with new bit-field-FIELD SECCertificateUsage - please use
+ ** verify a certificate by checking validity times against a certain time,
+ ** that we trust the issuer, and that the signature on the certificate is
+ ** valid.
+ **	"cert" the certificate to verify
+ **	"checkSig" only check signatures if true
+ */
 extern SECStatus CERT_VerifyCertificate(CERTCertDBHandle *handle,
                                         CERTCertificate *cert, PRBool checkSig,
                                         SECCertificateUsage requiredUsages,
