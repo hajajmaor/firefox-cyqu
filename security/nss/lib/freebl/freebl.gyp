@@ -772,6 +772,9 @@
       'verified/eurydice',
       '/usr/local/include',
     ],
+    'cflags_mozilla': [
+      '-I/usr/local/include',
+    ],
     'libraries': [
       '-L/usr/local/lib',
       '-loqs',
