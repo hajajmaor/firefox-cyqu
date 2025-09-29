@@ -1128,6 +1128,9 @@ var gIdentityHandler = {
       this._updateAttribute(element, "httpsonlystatus", httpsOnlyStatus);
     }
 
+    // Update Post-Quantum protection status
+    this._updatePQStatus();
+
     // Initialize the optional strings to empty values
     let supplemental = "";
     let verifier = "";
@@ -1388,6 +1391,38 @@ var gIdentityHandler = {
 
     // Don't cover potential drop targets on the toolbars or in content.
     gURLBar.view.close();
+  },
+
+  _updatePQStatus() {
+    // Update Post-Quantum cryptography protection status
+    let pqStatusLabel = document.getElementById("identity-popup-pq-status-label");
+    if (!pqStatusLabel) {
+      return; // UI element not yet created
+    }
+
+    // Check if we have security info
+    if (!this._secInfo) {
+      pqStatusLabel.hidden = true;
+      return;
+    }
+
+    try {
+      // Get PQ status from backend API
+      let pqStatus = this._secInfo.pqProtectionStatus;
+      let pqMessage = this._secInfo.pqStatusMessage;
+      let isPQProtected = this._secInfo.isPQProtected;
+
+      // Update the label text
+      pqStatusLabel.textContent = pqMessage;
+      pqStatusLabel.setAttribute("pqstatus", pqStatus);
+
+      // Show/hide based on whether we're on a secure connection
+      pqStatusLabel.hidden = !this._isSecureConnection;
+    } catch (e) {
+      // If PQ status API not available, hide the label
+      console.error("Error reading PQ status:", e);
+      pqStatusLabel.hidden = true;
+    }
   },
 
   _updateAttribute(elem, attr, value) {
