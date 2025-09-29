@@ -770,6 +770,13 @@
       'verified/karamel/krmllib/dist/minimal',
       'deprecated',
       'verified/eurydice',
+      '/usr/local/include',
+    ],
+    'libraries': [
+      '-loqs',
+    ],
+    'library_dirs': [
+      '/usr/local/lib',
     ],
     'defines': [
       'SHLIB_SUFFIX=\"<(dll_suffix)\"',
