@@ -40,7 +40,11 @@ echo "🔧 Step 3: Configuring wolfSSL with Dilithium support..."
     --enable-tlsx \
     --enable-postauth \
     --enable-session-ticket \
-    CFLAGS="-DWOLFSSL_ALT_CERT_CHAINS -DHAVE_EX_DATA"
+    --enable-opensslextra \
+    --enable-opensslall \
+    --enable-certgen \
+    --enable-certreq \
+    CFLAGS="-DWOLFSSL_ALT_CERT_CHAINS -DHAVE_EX_DATA -DOPENSSL_EXTRA"
 
 # Build
 echo ""
