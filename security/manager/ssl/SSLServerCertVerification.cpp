@@ -124,6 +124,7 @@
 #include "nsNSSComponent.h"
 #include "nsNSSIOLayer.h"
 #include "nsServiceManagerUtils.h"
+#include "PQAltSigVerifier.h"
 #include "nsString.h"
 #include "nsURLHelper.h"
 #include "nsXPCOMCIDInternal.h"
@@ -1164,6 +1165,16 @@ SSLServerCertVerificationResult::Run() {
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
     mSocketControl->SetServerCert(cert, mEVStatus);
     mSocketControl->SetSucceededCertChain(std::move(mBuiltChain));
+    
+    // Attempt Dilithium-3 alt-sig verification (non-blocking stub)
+    // TODO: Convert certBytes to CERTCertificate, build chain, call verifier
+    // For now, since this is a stub and we don't have the conversion logic,
+    // we simply set altSigDil3 to false. Full implementation requires:
+    // 1. Decoding certBytes into CERTCertificate
+    // 2. Building a Vector<CERTCertificate*> from mBuiltChain
+    // 3. Calling VerifyAltSigDilithium3(leafCert, chain)
+    // 4. Setting mSocketControl->SetAltSigDil3(status == AltSigStatus::Verified)
+    mSocketControl->SetAltSigDil3(false);  // Stub: always false until implemented
   } else {
     nsTArray<uint8_t> certBytes(mPeerCertChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
