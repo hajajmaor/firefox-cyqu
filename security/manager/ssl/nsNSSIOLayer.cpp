@@ -1504,6 +1504,27 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
             ("[%p] nsSSLIOLayerSetOptions: Setting compat mode failed\n", fd));
   }
 
+  // Always advertise additional key shares (classical + hybrid).
+  // If the build's NSS has it, send all supported shares.
+  // Fallback gracefully if the symbol/enum isn't present.
+#if defined(SSL_SEND_ALL_KEYSHARES)
+  (void)SSL_SendAdditionalKeyShares(fd, SSL_SEND_ALL_KEYSHARES);
+#endif
+
+  // Prefer a hybrid group (X25519+ML-KEM-768) before classical-only.
+  // Guard on enum presence; otherwise no-op.
+#if defined(ssl_grp_x25519_kyber_768)
+  {
+    static const SSLNamedGroup prefGroups[] = {
+      ssl_grp_x25519_kyber_768,  // hybrid first
+      ssl_grp_x25519,            // classical fallback
+      ssl_grp_secp256r1
+    };
+    (void)SSL_NamedGroupConfig(fd, prefGroups,
+                                (int)(sizeof(prefGroups)/sizeof(prefGroups[0])));
+  }
+#endif
+
   // setting TLS max version
   uint32_t versionFlags =
       getTLSProviderFlagMaxVersion(infoObject->GetProviderTlsFlags());
