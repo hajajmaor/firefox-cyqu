@@ -17341,11 +17341,7 @@
 
 - name: security.tls.enable_kyber
   type: RelaxedAtomicBool
-#ifdef ANDROID
-  value: @IS_NIGHTLY_BUILD@
-#else
   value: true
-#endif
   mirror: always
   rust: true
 
