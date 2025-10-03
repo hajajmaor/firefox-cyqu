@@ -1,0 +1,4 @@
+# Place your EJBCA-issued PEMs here:
+# - server.pem (leaf cert + chain, alt-sig inside)
+# - server.key (RSA private key for RSA-PSS)
+

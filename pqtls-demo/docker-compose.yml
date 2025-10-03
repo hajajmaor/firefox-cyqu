@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  fastapi:
+    build: ./fastapi
+    container_name: fastapi
+    expose: ["8000"]
+
+  nginx-pq:
+    build: ./nginx-pq
+    container_name: nginx-pq
+    ports: ["443:443"]
+    depends_on: [fastapi]
+    environment:
+      OPENSSL_CONF: /etc/ssl/openssl-oqs.cnf
+      OPENSSL_MODULES: /usr/lib/ossl-modules
+    volumes:
+      - ./tls:/etc/nginx/tls:ro
+
