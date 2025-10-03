@@ -962,6 +962,59 @@ var gIdentityHandler = {
   },
 
   /**
+   * Update the Post-Quantum status display in the identity panel.
+   * Shows whether the connection uses PQ KEX and/or Dilithium-3 alt-sig.
+   */
+  _updatePostQuantumStatus() {
+    try {
+      const secInfo = this._secInfo?.QueryInterface(Ci.nsITransportSecurityInfo);
+      if (!secInfo) {
+        return;
+      }
+
+      let pqStatus = "";
+      const pqKex = secInfo.pqKex;
+      const altSigDil3 = secInfo.altSigDil3;
+
+      if (altSigDil3) {
+        pqStatus = "PQ (Dil-3)";
+      } else if (pqKex) {
+        pqStatus = "PQ (KEX-only)";
+      } else if (this._isSecureConnection) {
+        pqStatus = "Not PQ";
+      }
+
+      if (pqStatus) {
+        // Get or create the PQ status element in the identity popup main view
+        let identityPopupMainView = document.getElementById("identity-popup-mainView");
+        if (!identityPopupMainView) {
+          return;
+        }
+
+        let pqStatusElement = document.getElementById("identity-popup-pq-status");
+        if (!pqStatusElement) {
+          pqStatusElement = document.createXULElement("description");
+          pqStatusElement.id = "identity-popup-pq-status";
+          pqStatusElement.style.fontSize = "smaller";
+          pqStatusElement.style.marginTop = "4px";
+          pqStatusElement.style.opacity = "0.8";
+          // Insert after the security button
+          let securityButton = document.getElementById("identity-popup-security-button");
+          if (securityButton && securityButton.nextSibling) {
+            identityPopupMainView.insertBefore(pqStatusElement, securityButton.nextSibling);
+          } else {
+            identityPopupMainView.appendChild(pqStatusElement);
+          }
+        }
+        pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
+      }
+    } catch (e) {
+      // Silently fail if PQ status cannot be determined
+      console.error("Error updating PQ status:", e);
+    }
+  },
+
+  /**
    * Set up the title and content messages for the identity message popup,
    * based on the specified mode, and the details of the SSL cert, where
    * applicable
@@ -1138,6 +1191,9 @@ var gIdentityHandler = {
     if (this._isSecureConnection || this._isCertUserOverridden) {
       verifier = this._identityIconLabel.tooltipText;
     }
+
+    // Display Post-Quantum status if TLS connection is present
+    this._updatePostQuantumStatus();
 
     // Fill in organization information if we have a valid EV certificate.
     if (this._isEV) {
