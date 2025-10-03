@@ -520,3 +520,15 @@ NS_IMETHODIMP CommonSocketControl::SetBrowserId(uint64_t) {
 NS_IMETHODIMP CommonSocketControl::GetBrowserId(uint64_t*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
+
+NS_IMETHODIMP CommonSocketControl::GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP CommonSocketControl::GetPqKex(bool* aPqKex) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP CommonSocketControl::GetAltSigDil3(bool* aAltSigDil3) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}

@@ -134,4 +134,11 @@ interface nsITransportSecurityInfo : nsISupports {
      * The id used to uniquely identify the connection to the peer.
      */
     readonly attribute ACString peerId;
+
+    /**
+     * Post-Quantum cryptography status.
+     */
+    readonly attribute long negotiatedGroup;  // SSLNamedGroup id
+    readonly attribute boolean pqKex;         // true if hybrid KEX negotiated
+    readonly attribute boolean altSigDil3;    // true if Dilithium-3 alt-sig verified
 };

@@ -236,6 +236,21 @@ class NSSSocketControl final : public CommonSocketControl {
     mMACAlgorithmUsed = mac;
   }
 
+  void SetNegotiatedGroup(int32_t group) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mNegotiatedGroup = group;
+  }
+
+  void SetPqKex(bool pqKex) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mPqKex = pqKex;
+  }
+
+  void SetAltSigDil3(bool altSigDil3) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mAltSigDil3 = altSigDil3;
+  }
+
   void SetShortWritePending(int32_t amount, unsigned char data) {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mIsShortWritePending = true;
@@ -355,6 +370,11 @@ class NSSSocketControl final : public CommonSocketControl {
   int16_t mKEAUsed;
   uint32_t mKEAKeyBits;
   int16_t mMACAlgorithmUsed;
+
+  // Post-Quantum KEX tracking
+  int32_t mNegotiatedGroup = -1;  // SSLNamedGroup enum value
+  bool mPqKex = false;             // true if hybrid KEX negotiated
+  bool mAltSigDil3 = false;        // true if Dilithium-3 alt-sig verified
 
   uint32_t mProviderTlsFlags;
   mozilla::TimeStamp mSocketCreationTimestamp;

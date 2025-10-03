@@ -84,6 +84,27 @@ NSSSocketControl::GetMACAlgorithmUsed(int16_t* aMac) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+NSSSocketControl::GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
+  COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+  *aNegotiatedGroup = mNegotiatedGroup;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NSSSocketControl::GetPqKex(bool* aPqKex) {
+  COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+  *aPqKex = mPqKex;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NSSSocketControl::GetAltSigDil3(bool* aAltSigDil3) {
+  COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+  *aAltSigDil3 = mAltSigDil3;
+  return NS_OK;
+}
+
 void NSSSocketControl::NoteTimeUntilReady() {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   if (mNotedTimeUntilReady) {

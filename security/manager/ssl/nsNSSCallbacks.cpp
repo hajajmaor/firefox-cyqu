@@ -998,6 +998,14 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   if (rv != SECSuccess) {
     return;
   }
+  
+  // Capture negotiated group and PQ KEX status for UI
+  infoObject->SetNegotiatedGroup((int32_t)channelInfo.keaGroup);
+  // Check if hybrid PQ group was negotiated (e.g., X25519+ML-KEM-768)
+  // The enum value for ssl_grp_kem_mlkem768x25519 should indicate hybrid KEX
+  bool isPqKex = (channelInfo.keaType == ssl_kea_ecdh_hybrid);
+  infoObject->SetPqKex(isPqKex);
+  
   AccumulateCipherSuite(channelInfo);
 
   // Get the protocol version for telemetry
