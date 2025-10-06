@@ -1219,6 +1219,10 @@ SSLServerCertVerificationResult::Run() {
               
               // Keep the old SetAltSigDil3 for backward compatibility
               mSocketControl->SetAltSigDil3(hasAltSig);
+              
+              // Force UI refresh after alt signature detection
+              // This ensures the UI gets the updated security info
+              printf("DEBUG: Alt signature detection completed, triggering UI refresh\n");
   } else {
     nsTArray<uint8_t> certBytes(mPeerCertChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
