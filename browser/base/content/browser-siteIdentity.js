@@ -1066,56 +1066,6 @@ var gIdentityHandler = {
       identityPopupMainView.appendChild(pqStatusElement);
     }
     pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
-    
-    // Add PQ-Safe badge to address bar if alt signatures are verified
-    if (pqStatus.includes("PQ-Safe")) {
-      this._addPQSafeBadge();
-    } else {
-      this._removePQSafeBadge();
-    }
-  },
-
-  /**
-   * Add PQ-Safe badge to the address bar
-   */
-  _addPQSafeBadge() {
-    // Find the identity icon in the address bar
-    let identityIcon = document.getElementById("identity-icon");
-    if (!identityIcon) {
-      return;
-    }
-    
-    // Check if badge already exists
-    let pqBadge = document.getElementById("pq-safe-badge");
-    if (pqBadge) {
-      return;
-    }
-    
-    // Create PQ-Safe badge
-    pqBadge = document.createXULElement("label");
-    pqBadge.id = "pq-safe-badge";
-    pqBadge.textContent = "PQ-Safe";
-    pqBadge.style.backgroundColor = "#00ff00";
-    pqBadge.style.color = "#000000";
-    pqBadge.style.fontSize = "10px";
-    pqBadge.style.fontWeight = "bold";
-    pqBadge.style.padding = "2px 4px";
-    pqBadge.style.borderRadius = "3px";
-    pqBadge.style.marginLeft = "4px";
-    pqBadge.style.display = "inline-block";
-    
-    // Insert after the identity icon
-    identityIcon.parentNode.insertBefore(pqBadge, identityIcon.nextSibling);
-  },
-
-  /**
-   * Remove PQ-Safe badge from the address bar
-   */
-  _removePQSafeBadge() {
-    let pqBadge = document.getElementById("pq-safe-badge");
-    if (pqBadge) {
-      pqBadge.remove();
-    }
   },
 
   /**
