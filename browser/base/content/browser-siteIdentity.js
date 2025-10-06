@@ -1095,7 +1095,8 @@ var gIdentityHandler = {
     pqIndicator.style.boxShadow = "0 1px 2px rgba(0,0,0,0.2)";
     pqIndicator.title = "Post-Quantum Safe: Alt signatures verified";
     
-    // Insert right after the identity box (same row as shield/info icons)
+    // Replace the identity box with PQ-Safe indicator
+    identityBox.style.display = "none";
     identityBox.parentNode.insertBefore(pqIndicator, identityBox.nextSibling);
   },
 
@@ -1106,6 +1107,12 @@ var gIdentityHandler = {
     let pqIndicator = document.getElementById("pq-safe-indicator");
     if (pqIndicator) {
       pqIndicator.remove();
+    }
+    
+    // Restore the identity box
+    let identityBox = document.getElementById("identity-box");
+    if (identityBox) {
+      identityBox.style.display = "";
     }
   },
 
