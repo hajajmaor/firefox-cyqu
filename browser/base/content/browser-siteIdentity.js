@@ -1063,9 +1063,10 @@ var gIdentityHandler = {
    * Add PQ-Safe indicator to the address bar
    */
   _addPQSafeIndicator() {
-    // Find the URL bar container
+    // Find the URL bar container and the identity box
     let urlbarContainer = document.getElementById("urlbar");
-    if (!urlbarContainer) {
+    let identityBox = document.getElementById("identity-box");
+    if (!urlbarContainer || !identityBox) {
       return;
     }
     
@@ -1075,23 +1076,27 @@ var gIdentityHandler = {
       return;
     }
     
-    // Create PQ-Safe indicator
+    // Create PQ-Safe indicator with quantum icon
     pqIndicator = document.createXULElement("label");
     pqIndicator.id = "pq-safe-indicator";
-    pqIndicator.textContent = "PQ-Safe";
+    pqIndicator.innerHTML = "⚛️ PQ-Safe"; // Quantum atom icon
     pqIndicator.style.backgroundColor = "#00ff00";
     pqIndicator.style.color = "#000000";
-    pqIndicator.style.fontSize = "11px";
+    pqIndicator.style.fontSize = "10px";
     pqIndicator.style.fontWeight = "bold";
-    pqIndicator.style.padding = "2px 6px";
-    pqIndicator.style.borderRadius = "4px";
-    pqIndicator.style.marginLeft = "8px";
+    pqIndicator.style.padding = "1px 4px";
+    pqIndicator.style.borderRadius = "3px";
+    pqIndicator.style.marginLeft = "2px";
     pqIndicator.style.display = "inline-block";
     pqIndicator.style.verticalAlign = "middle";
+    pqIndicator.style.position = "relative";
+    pqIndicator.style.zIndex = "1000";
+    pqIndicator.style.border = "1px solid #00cc00";
+    pqIndicator.style.boxShadow = "0 1px 2px rgba(0,0,0,0.2)";
     pqIndicator.title = "Post-Quantum Safe: Alt signatures verified";
     
-    // Insert at the end of the URL bar
-    urlbarContainer.appendChild(pqIndicator);
+    // Insert right after the identity box (same row as shield/info icons)
+    identityBox.parentNode.insertBefore(pqIndicator, identityBox.nextSibling);
   },
 
   /**
