@@ -1016,10 +1016,16 @@ var gIdentityHandler = {
       
       if (finalHasAlt && finalAltName) {
         pqStatus = `PQ-Safe (${finalAltName})`;
+        // Add PQ-Safe indicator to address bar
+        this._addPQSafeIndicator();
       } else if (finalIsHybrid) {
         pqStatus = `PQ (${kexName})`;
+        // Remove PQ-Safe indicator for hybrid-only connections
+        this._removePQSafeIndicator();
       } else if (this._isSecureConnection) {
         pqStatus = "Classical TLS";
+        // Remove PQ-Safe indicator for classical connections
+        this._removePQSafeIndicator();
       }
       
       if (pqStatus) {
@@ -1051,6 +1057,51 @@ var gIdentityHandler = {
       identityPopupMainView.appendChild(pqStatusElement);
     }
     pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
+  },
+
+  /**
+   * Add PQ-Safe indicator to the address bar
+   */
+  _addPQSafeIndicator() {
+    // Find the URL bar container
+    let urlbarContainer = document.getElementById("urlbar");
+    if (!urlbarContainer) {
+      return;
+    }
+    
+    // Check if indicator already exists
+    let pqIndicator = document.getElementById("pq-safe-indicator");
+    if (pqIndicator) {
+      return;
+    }
+    
+    // Create PQ-Safe indicator
+    pqIndicator = document.createXULElement("label");
+    pqIndicator.id = "pq-safe-indicator";
+    pqIndicator.textContent = "PQ-Safe";
+    pqIndicator.style.backgroundColor = "#00ff00";
+    pqIndicator.style.color = "#000000";
+    pqIndicator.style.fontSize = "11px";
+    pqIndicator.style.fontWeight = "bold";
+    pqIndicator.style.padding = "2px 6px";
+    pqIndicator.style.borderRadius = "4px";
+    pqIndicator.style.marginLeft = "8px";
+    pqIndicator.style.display = "inline-block";
+    pqIndicator.style.verticalAlign = "middle";
+    pqIndicator.title = "Post-Quantum Safe: Alt signatures verified";
+    
+    // Insert at the end of the URL bar
+    urlbarContainer.appendChild(pqIndicator);
+  },
+
+  /**
+   * Remove PQ-Safe indicator from the address bar
+   */
+  _removePQSafeIndicator() {
+    let pqIndicator = document.getElementById("pq-safe-indicator");
+    if (pqIndicator) {
+      pqIndicator.remove();
+    }
   },
 
   /**
