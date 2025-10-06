@@ -1076,15 +1076,15 @@ var gIdentityHandler = {
       return;
     }
     
-    // Create PQ-Safe indicator with quantum icon
+    // Create PQ-Safe indicator with quantum icon only
     pqIndicator = document.createXULElement("label");
     pqIndicator.id = "pq-safe-indicator";
-    pqIndicator.innerHTML = "⚛️ PQ-Safe"; // Quantum atom icon
+    pqIndicator.innerHTML = "⚛️"; // Just the quantum atom icon
     pqIndicator.style.backgroundColor = "#00ff00";
     pqIndicator.style.color = "#000000";
-    pqIndicator.style.fontSize = "10px";
+    pqIndicator.style.fontSize = "12px";
     pqIndicator.style.fontWeight = "bold";
-    pqIndicator.style.padding = "1px 4px";
+    pqIndicator.style.padding = "2px 4px";
     pqIndicator.style.borderRadius = "3px";
     pqIndicator.style.marginLeft = "2px";
     pqIndicator.style.display = "inline-block";
@@ -1093,6 +1093,8 @@ var gIdentityHandler = {
     pqIndicator.style.zIndex = "1000";
     pqIndicator.style.border = "1px solid #00cc00";
     pqIndicator.style.boxShadow = "0 1px 2px rgba(0,0,0,0.2)";
+    pqIndicator.style.minWidth = "20px";
+    pqIndicator.style.textAlign = "center";
     pqIndicator.title = "Post-Quantum Safe: Alt signatures verified";
     
     // Replace the identity box with PQ-Safe indicator
