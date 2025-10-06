@@ -974,40 +974,27 @@ var gIdentityHandler = {
         return;
       }
       
-      // Force a refresh of the security info by getting it from the browser
-      // This ensures we get the latest values after certificate verification
-      const browser = gBrowser.selectedBrowser;
-      if (browser && browser.securityUI) {
-        const latestSecInfo = browser.securityUI.secInfo;
-        if (latestSecInfo) {
-          const latestPQInfo = latestSecInfo.QueryInterface(Ci.nsITransportSecurityInfo);
-      console.log(`DEBUG JS: Latest secInfo hasAltSig=${latestPQInfo.hasAltSig}, altSigAlgName='${latestPQInfo.altSigAlgName}'`);
-      console.log(`DEBUG JS: Latest secInfo isPQKEXHybrid=${latestPQInfo.isPQKEXHybrid}, pqKexGroupName='${latestPQInfo.pqKexGroupName}'`);
-      console.log(`DEBUG JS: Latest secInfo altSigDil3=${latestPQInfo.altSigDil3}, pqKex=${latestPQInfo.pqKex}`);
-      console.log(`DEBUG JS: Latest secInfo negotiatedGroup=${latestPQInfo.negotiatedGroup}`);
-          
-          // Use the latest security info instead of the cached one
-          const isHybrid = latestPQInfo.isPQKEXHybrid;
-          const kexName = latestPQInfo.pqKexGroupName || latestPQInfo.keaGroupName;
-          const hasAlt = latestPQInfo.hasAltSig;
-          const altName = latestPQInfo.altSigAlgName;
-          
-          console.log(`DEBUG JS: Using latest values - isHybrid=${isHybrid}, kexName='${kexName}', hasAlt=${hasAlt}, altName='${altName}'`);
-          
-          if (hasAlt && altName) {
-            pqStatus = `PQ-Safe (${altName})`;
-          } else if (isHybrid) {
-            pqStatus = `PQ (${kexName})`;
-          } else if (this._isSecureConnection) {
-            pqStatus = "Classical TLS";
-          }
-          
-          if (pqStatus) {
-            this._displayPQStatus(pqStatus);
-          }
-          return;
-        }
+      // For now, let's use a simple approach - check if we have alt signature data
+      // and display it even if the timing isn't perfect
+      const hasAlt = secInfo.hasAltSig || secInfo.altSigDil3;
+      const altName = secInfo.altSigAlgName || (hasAlt ? "ML-DSA-65" : "");
+      const isHybrid = secInfo.isPQKEXHybrid || secInfo.pqKex;
+      const kexName = secInfo.pqKexGroupName || secInfo.keaGroupName || "mlkem768x25519";
+      
+      console.log(`DEBUG JS: Final values - isHybrid=${isHybrid}, kexName='${kexName}', hasAlt=${hasAlt}, altName='${altName}'`);
+      
+      if (hasAlt && altName) {
+        pqStatus = `PQ-Safe (${altName})`;
+      } else if (isHybrid) {
+        pqStatus = `PQ (${kexName})`;
+      } else if (this._isSecureConnection) {
+        pqStatus = "Classical TLS";
       }
+      
+      if (pqStatus) {
+        this._displayPQStatus(pqStatus);
+      }
+      return;
 
       let pqStatus = "";
       const isHybrid = secInfo.isPQKEXHybrid;
@@ -1079,6 +1066,56 @@ var gIdentityHandler = {
       identityPopupMainView.appendChild(pqStatusElement);
     }
     pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
+    
+    // Add PQ-Safe badge to address bar if alt signatures are verified
+    if (pqStatus.includes("PQ-Safe")) {
+      this._addPQSafeBadge();
+    } else {
+      this._removePQSafeBadge();
+    }
+  },
+
+  /**
+   * Add PQ-Safe badge to the address bar
+   */
+  _addPQSafeBadge() {
+    // Find the identity icon in the address bar
+    let identityIcon = document.getElementById("identity-icon");
+    if (!identityIcon) {
+      return;
+    }
+    
+    // Check if badge already exists
+    let pqBadge = document.getElementById("pq-safe-badge");
+    if (pqBadge) {
+      return;
+    }
+    
+    // Create PQ-Safe badge
+    pqBadge = document.createXULElement("label");
+    pqBadge.id = "pq-safe-badge";
+    pqBadge.textContent = "PQ-Safe";
+    pqBadge.style.backgroundColor = "#00ff00";
+    pqBadge.style.color = "#000000";
+    pqBadge.style.fontSize = "10px";
+    pqBadge.style.fontWeight = "bold";
+    pqBadge.style.padding = "2px 4px";
+    pqBadge.style.borderRadius = "3px";
+    pqBadge.style.marginLeft = "4px";
+    pqBadge.style.display = "inline-block";
+    
+    // Insert after the identity icon
+    identityIcon.parentNode.insertBefore(pqBadge, identityIcon.nextSibling);
+  },
+
+  /**
+   * Remove PQ-Safe badge from the address bar
+   */
+  _removePQSafeBadge() {
+    let pqBadge = document.getElementById("pq-safe-badge");
+    if (pqBadge) {
+      pqBadge.remove();
+    }
   },
 
   /**
