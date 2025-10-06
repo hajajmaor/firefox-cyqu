@@ -449,6 +449,9 @@ CommonSocketControl::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
   if (NS_FAILED(rv)) {
     return rv;
   }
+  printf("DEBUG: GetSecurityInfo() on socket control %p creating TransportSecurityInfo with mNegotiatedGroup=%d, mPqKex=%d, mAltSigDil3=%d, mHasAltSig=%d, mAltSigAlgName='%s'\n",
+         this, mNegotiatedGroup, mPqKex, mAltSigDil3, mHasAltSig, mAltSigAlgName.get());
+  printf("DEBUG: GetSecurityInfo() - This is the socket control that the UI will read from\n");
   nsCOMPtr<nsITransportSecurityInfo> securityInfo(
       new psm::TransportSecurityInfo(
           mSecurityState, mErrorCode, mFailedCertChain.Clone(), mServerCert,
@@ -457,7 +460,8 @@ CommonSocketControl::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
           mCertificateTransparencyStatus, mIsAcceptedEch,
           mIsDelegatedCredential, mOverridableErrorCategory, mMadeOCSPRequests,
           mUsedPrivateDNS, mIsEV, mNPNCompleted, mNegotiatedNPN, mResumed,
-          mIsBuiltCertChainRootBuiltInRoot, mPeerId));
+          mIsBuiltCertChainRootBuiltInRoot, mPeerId, mNegotiatedGroup, mPqKex, mAltSigDil3,
+          mIsPQKEXHybrid, mPQKexGroupName, mHasAltSig, mAltSigAlgName));
   securityInfo.forget(aSecurityInfo);
   return NS_OK;
 }
@@ -521,14 +525,3 @@ NS_IMETHODIMP CommonSocketControl::GetBrowserId(uint64_t*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP CommonSocketControl::GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP CommonSocketControl::GetPqKex(bool* aPqKex) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP CommonSocketControl::GetAltSigDil3(bool* aAltSigDil3) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}

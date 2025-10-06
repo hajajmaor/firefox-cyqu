@@ -43,7 +43,10 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
       Maybe<OverridableErrorCategory> aOverridableErrorCategory,
       bool aMadeOCSPRequests, bool aUsedPrivateDNS, Maybe<bool> aIsEV,
       bool aNPNCompleted, const nsCString& aNegotiatedNPN, bool aResumed,
-      bool aIsBuiltCertChainRootBuiltInRoot, const nsCString& aPeerId);
+      bool aIsBuiltCertChainRootBuiltInRoot, const nsCString& aPeerId,
+      int32_t aNegotiatedGroup = -1, bool aPqKex = false, bool aAltSigDil3 = false,
+      bool aIsPQKEXHybrid = false, const nsCString& aPQKexGroupName = nsCString(),
+      bool aHasAltSig = false, const nsCString& aAltSigAlgName = nsCString());
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITRANSPORTSECURITYINFO
@@ -80,6 +83,17 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
   const bool mResumed;
   const bool mIsBuiltCertChainRootBuiltInRoot;
   const nsCString mPeerId;
+  
+  // Post-Quantum fields
+  const int32_t mNegotiatedGroup;
+  const bool mPqKex;
+  const bool mAltSigDil3;
+
+  // Enhanced Post-Quantum fields for UI
+  const bool mIsPQKEXHybrid;
+  const nsCString mPQKexGroupName;
+  const bool mHasAltSig;
+  const nsCString mAltSigAlgName;
 
   static nsresult ReadOldOverridableErrorBits(
       nsIObjectInputStream* aStream,

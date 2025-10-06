@@ -88,6 +88,7 @@ NS_IMETHODIMP
 NSSSocketControl::GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   *aNegotiatedGroup = mNegotiatedGroup;
+  printf("DEBUG: GetNegotiatedGroup() returning %d\n", mNegotiatedGroup);
   return NS_OK;
 }
 
@@ -95,6 +96,7 @@ NS_IMETHODIMP
 NSSSocketControl::GetPqKex(bool* aPqKex) {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   *aPqKex = mPqKex;
+  printf("DEBUG: GetPqKex() returning %d\n", mPqKex);
   return NS_OK;
 }
 
@@ -102,6 +104,7 @@ NS_IMETHODIMP
 NSSSocketControl::GetAltSigDil3(bool* aAltSigDil3) {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   *aAltSigDil3 = mAltSigDil3;
+  printf("DEBUG: GetAltSigDil3() returning %d\n", mAltSigDil3);
   return NS_OK;
 }
 

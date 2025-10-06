@@ -967,21 +967,69 @@ var gIdentityHandler = {
    */
   _updatePostQuantumStatus() {
     try {
-      const secInfo = this._secInfo?.QueryInterface(Ci.nsITransportSecurityInfo);
+      // Read fresh security info instead of using cached _secInfo
+      const freshSecInfo = gBrowser.securityUI.secInfo;
+      const secInfo = freshSecInfo?.QueryInterface(Ci.nsITransportSecurityInfo);
       if (!secInfo) {
         return;
       }
+      
+      // Force a refresh of the security info by getting it from the browser
+      // This ensures we get the latest values after certificate verification
+      const browser = gBrowser.selectedBrowser;
+      if (browser && browser.securityUI) {
+        const latestSecInfo = browser.securityUI.secInfo;
+        if (latestSecInfo) {
+          const latestPQInfo = latestSecInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+      console.log(`DEBUG JS: Latest secInfo hasAltSig=${latestPQInfo.hasAltSig}, altSigAlgName='${latestPQInfo.altSigAlgName}'`);
+      console.log(`DEBUG JS: Latest secInfo isPQKEXHybrid=${latestPQInfo.isPQKEXHybrid}, pqKexGroupName='${latestPQInfo.pqKexGroupName}'`);
+      console.log(`DEBUG JS: Latest secInfo altSigDil3=${latestPQInfo.altSigDil3}, pqKex=${latestPQInfo.pqKex}`);
+      console.log(`DEBUG JS: Latest secInfo negotiatedGroup=${latestPQInfo.negotiatedGroup}`);
+          
+          // Use the latest security info instead of the cached one
+          const isHybrid = latestPQInfo.isPQKEXHybrid;
+          const kexName = latestPQInfo.pqKexGroupName || latestPQInfo.keaGroupName;
+          const hasAlt = latestPQInfo.hasAltSig;
+          const altName = latestPQInfo.altSigAlgName;
+          
+          console.log(`DEBUG JS: Using latest values - isHybrid=${isHybrid}, kexName='${kexName}', hasAlt=${hasAlt}, altName='${altName}'`);
+          
+          if (hasAlt && altName) {
+            pqStatus = `PQ-Safe (${altName})`;
+          } else if (isHybrid) {
+            pqStatus = `PQ (${kexName})`;
+          } else if (this._isSecureConnection) {
+            pqStatus = "Classical TLS";
+          }
+          
+          if (pqStatus) {
+            this._displayPQStatus(pqStatus);
+          }
+          return;
+        }
+      }
 
       let pqStatus = "";
-      const pqKex = secInfo.pqKex;
-      const altSigDil3 = secInfo.altSigDil3;
+      const isHybrid = secInfo.isPQKEXHybrid;
+      const kexName = secInfo.pqKexGroupName || secInfo.keaGroupName;
+      const hasAlt = secInfo.hasAltSig;
+      const altName = secInfo.altSigAlgName;
 
-      if (altSigDil3) {
-        pqStatus = "PQ (Dil-3)";
-      } else if (pqKex) {
-        pqStatus = "PQ (KEX-only)";
+      console.log(`DEBUG JS: isHybrid=${isHybrid}, kexName='${kexName}', hasAlt=${hasAlt}, altName='${altName}'`);
+      console.log(`DEBUG JS: secInfo.hasAltSig=${secInfo.hasAltSig}, secInfo.altSigAlgName='${secInfo.altSigAlgName}'`);
+      console.log(`DEBUG JS: secInfo.isPQKEXHybrid=${secInfo.isPQKEXHybrid}, secInfo.pqKexGroupName='${secInfo.pqKexGroupName}'`);
+      console.log(`DEBUG JS: freshSecInfo=${freshSecInfo}, gBrowser.securityUI.secInfo=${gBrowser.securityUI.secInfo}`);
+      console.log(`DEBUG JS: cached _secInfo=${this._secInfo}`);
+      if (this._secInfo && freshSecInfo) {
+        console.log(`DEBUG JS: cached hasAltSig=${this._secInfo.hasAltSig}, fresh hasAltSig=${secInfo.hasAltSig}`);
+      }
+
+      if (hasAlt && altName) {
+        pqStatus = `PQ-Safe (${altName})`;
+      } else if (isHybrid) {
+        pqStatus = `PQ (${kexName})`;
       } else if (this._isSecureConnection) {
-        pqStatus = "Not PQ";
+        pqStatus = "Classical TLS";
       }
 
       if (pqStatus) {
@@ -998,19 +1046,77 @@ var gIdentityHandler = {
           pqStatusElement.style.fontSize = "smaller";
           pqStatusElement.style.marginTop = "4px";
           pqStatusElement.style.opacity = "0.8";
-          // Insert after the security button
-          let securityButton = document.getElementById("identity-popup-security-button");
-          if (securityButton && securityButton.nextSibling) {
-            identityPopupMainView.insertBefore(pqStatusElement, securityButton.nextSibling);
-          } else {
-            identityPopupMainView.appendChild(pqStatusElement);
-          }
+          // Insert at the end of the main view
+          identityPopupMainView.appendChild(pqStatusElement);
         }
         pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
+
+        // Add detailed alt signature information
+        this._addAltSignatureDetails(secInfo);
       }
     } catch (e) {
       // Silently fail if PQ status cannot be determined
       console.error("Error updating PQ status:", e);
+    }
+  },
+
+  /**
+   * Display the Post-Quantum status in the identity panel.
+   */
+  _displayPQStatus(pqStatus) {
+    let identityPopupMainView = document.getElementById("identity-popup-mainView");
+    if (!identityPopupMainView) {
+      return;
+    }
+
+    let pqStatusElement = document.getElementById("identity-popup-pq-status");
+    if (!pqStatusElement) {
+      pqStatusElement = document.createXULElement("description");
+      pqStatusElement.id = "identity-popup-pq-status";
+      pqStatusElement.style.fontSize = "smaller";
+      pqStatusElement.style.marginTop = "4px";
+      pqStatusElement.style.opacity = "0.8";
+      identityPopupMainView.appendChild(pqStatusElement);
+    }
+    pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
+  },
+
+  /**
+   * Add detailed alt signature information to the identity panel
+   */
+  _addAltSignatureDetails(secInfo) {
+    try {
+      let identityPopupMainView = document.getElementById("identity-popup-mainView");
+      if (!identityPopupMainView) {
+        return;
+      }
+
+      // Remove existing alt signature details
+      let existingDetails = document.getElementById("identity-popup-alt-sig-details");
+      if (existingDetails) {
+        existingDetails.remove();
+      }
+
+      // Create alt signature details section
+      let altSigDetails = document.createXULElement("description");
+      altSigDetails.id = "identity-popup-alt-sig-details";
+      altSigDetails.style.fontSize = "smaller";
+      altSigDetails.style.marginTop = "8px";
+      altSigDetails.style.padding = "4px";
+      altSigDetails.style.backgroundColor = "rgba(0,0,0,0.1)";
+      altSigDetails.style.borderRadius = "3px";
+      altSigDetails.style.fontFamily = "monospace";
+
+      let details = [];
+      details.push(`Alt Signature: ${secInfo.hasAltSig ? `✓ ${secInfo.altSigAlgName || "Detected"}` : "✗ Not Found"}`);
+      details.push(`PQ KEX: ${secInfo.isPQKEXHybrid ? `✓ ${secInfo.pqKexGroupName || "Hybrid"}` : "✗ Classical"}`);
+      details.push(`Group: ${secInfo.keaGroupName || "Unknown"}`);
+      
+      altSigDetails.textContent = details.join(" | ");
+      identityPopupMainView.appendChild(altSigDetails);
+
+    } catch (e) {
+      console.error("Error adding alt signature details:", e);
     }
   },
 

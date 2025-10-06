@@ -116,6 +116,11 @@ class NSSSocketControl final : public CommonSocketControl {
   NS_IMETHOD SetBrowserId(uint64_t browserId) override;
   NS_IMETHOD GetBrowserId(uint64_t* browserId) override;
 
+  // Post-Quantum methods
+  NS_IMETHOD GetNegotiatedGroup(int32_t* aNegotiatedGroup) override;
+  NS_IMETHOD GetPqKex(bool* aPqKex) override;
+  NS_IMETHOD GetAltSigDil3(bool* aAltSigDil3) override;
+
   PRStatus CloseSocketAndDestroy();
 
   void SetNegotiatedNPN(const char* value, uint32_t length);
@@ -236,17 +241,17 @@ class NSSSocketControl final : public CommonSocketControl {
     mMACAlgorithmUsed = mac;
   }
 
-  void SetNegotiatedGroup(int32_t group) {
+  void SetNegotiatedGroup(int32_t group) override {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mNegotiatedGroup = group;
   }
 
-  void SetPqKex(bool pqKex) {
+  void SetPqKex(bool pqKex) override {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mPqKex = pqKex;
   }
 
-  void SetAltSigDil3(bool altSigDil3) {
+  void SetAltSigDil3(bool altSigDil3) override {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mAltSigDil3 = altSigDil3;
   }

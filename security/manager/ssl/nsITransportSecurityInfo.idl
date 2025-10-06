@@ -141,4 +141,12 @@ interface nsITransportSecurityInfo : nsISupports {
     readonly attribute long negotiatedGroup;  // SSLNamedGroup id
     readonly attribute boolean pqKex;         // true if hybrid KEX negotiated
     readonly attribute boolean altSigDil3;    // true if Dilithium-3 alt-sig verified
+
+    /**
+     * Enhanced Post-Quantum information for UI display.
+     */
+    readonly attribute boolean isPQKEXHybrid;    // true if hybrid KEX negotiated
+    readonly attribute ACString pqKexGroupName;  // e.g. "X25519MLKEM768"
+    readonly attribute boolean hasAltSig;        // true if alt signature present
+    readonly attribute ACString altSigAlgName;   // e.g. "ML-DSA-65"
 };

@@ -141,6 +141,61 @@ class CommonSocketControl : public nsITLSSocketControl {
   }
   int32_t GetErrorCode();
 
+  // Post-Quantum methods (stub implementations in base class)
+  NS_IMETHOD GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  NS_IMETHOD GetPqKex(bool* aPqKex) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  NS_IMETHOD GetAltSigDil3(bool* aAltSigDil3) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  // Setter methods for PQ status (stub implementations in base class)
+  virtual void SetNegotiatedGroup(int32_t group) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mNegotiatedGroup = group;
+  }
+  virtual void SetPqKex(bool pqKex) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mPqKex = pqKex;
+  }
+  virtual void SetAltSigDil3(bool altSigDil3) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mAltSigDil3 = altSigDil3;
+  }
+
+  // Enhanced PQ setter methods
+  virtual void SetIsPQKEXHybrid(bool isHybrid) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mIsPQKEXHybrid = isHybrid;
+  }
+  virtual void SetPQKexGroupName(const nsCString& groupName) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    mPQKexGroupName = groupName;
+  }
+  virtual void SetHasAltSig(bool hasAltSig) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    printf("DEBUG: SetHasAltSig(%d) called\n", hasAltSig);
+    mHasAltSig = hasAltSig;
+  }
+  virtual void SetAltSigAlgName(const nsCString& algName) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    printf("DEBUG: SetAltSigAlgName('%s') called\n", algName.get());
+    mAltSigAlgName = algName;
+  }
+
+  // Getter for keaGroupName
+  virtual void GetKeaGroupName(nsCString& aKeaGroupName) {
+    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+    if (mKeaGroupName.isSome()) {
+      aKeaGroupName = mKeaGroupName.value();
+    } else {
+      aKeaGroupName.Truncate();
+    }
+  }
+
  protected:
   virtual ~CommonSocketControl() = default;
 
@@ -181,6 +236,17 @@ class CommonSocketControl : public nsITLSSocketControl {
   bool mResumed;
   bool mIsBuiltCertChainRootBuiltInRoot;
   nsCString mPeerId;
+  
+  // Post-Quantum fields
+  int32_t mNegotiatedGroup = -1;
+  bool mPqKex = false;
+  bool mAltSigDil3 = false;
+
+  // Enhanced Post-Quantum fields for UI
+  bool mIsPQKEXHybrid = false;
+  nsCString mPQKexGroupName;
+  bool mHasAltSig = false;
+  nsCString mAltSigAlgName;
 
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   const PRThread* mOwningThread;

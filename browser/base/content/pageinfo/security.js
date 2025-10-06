@@ -151,6 +151,26 @@ var security = {
         break;
     }
 
+    // Add Post-Quantum alt signature information
+    try {
+      retval.hasAltSig = secInfo.hasAltSig;
+      retval.altSigAlgName = secInfo.altSigAlgName;
+      retval.isPQKEXHybrid = secInfo.isPQKEXHybrid;
+      retval.pqKexGroupName = secInfo.pqKexGroupName;
+      retval.altSigDil3 = secInfo.altSigDil3;
+      retval.pqKex = secInfo.pqKex;
+      retval.negotiatedGroup = secInfo.negotiatedGroup;
+    } catch (e) {
+      // If PQ fields are not available, set defaults
+      retval.hasAltSig = false;
+      retval.altSigAlgName = "";
+      retval.isPQKEXHybrid = false;
+      retval.pqKexGroupName = "";
+      retval.altSigDil3 = false;
+      retval.pqKex = false;
+      retval.negotiatedGroup = -1;
+    }
+
     return retval;
   },
 

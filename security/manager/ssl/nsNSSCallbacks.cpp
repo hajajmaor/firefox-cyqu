@@ -1000,10 +1000,12 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   }
   
   // Capture negotiated group and PQ KEX status for UI
+  printf("DEBUG: HandshakeCallback: keaGroup=%d, keaType=%d\n", channelInfo.keaGroup, channelInfo.keaType);
   infoObject->SetNegotiatedGroup((int32_t)channelInfo.keaGroup);
   // Check if hybrid PQ group was negotiated (e.g., X25519+ML-KEM-768)
   // The enum value for ssl_grp_kem_mlkem768x25519 should indicate hybrid KEX
   bool isPqKex = (channelInfo.keaType == ssl_kea_ecdh_hybrid);
+  printf("DEBUG: HandshakeCallback: isPqKex=%d, calling SetPqKex(%d)\n", isPqKex, isPqKex);
   infoObject->SetPqKex(isPqKex);
   
   AccumulateCipherSuite(channelInfo);

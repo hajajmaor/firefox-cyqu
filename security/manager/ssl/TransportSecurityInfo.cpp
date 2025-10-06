@@ -49,7 +49,10 @@ TransportSecurityInfo::TransportSecurityInfo(
     Maybe<OverridableErrorCategory> aOverridableErrorCategory,
     bool aMadeOCSPRequests, bool aUsedPrivateDNS, Maybe<bool> aIsEV,
     bool aNPNCompleted, const nsCString& aNegotiatedNPN, bool aResumed,
-    bool aIsBuiltCertChainRootBuiltInRoot, const nsCString& aPeerId)
+    bool aIsBuiltCertChainRootBuiltInRoot, const nsCString& aPeerId,
+    int32_t aNegotiatedGroup, bool aPqKex, bool aAltSigDil3,
+    bool aIsPQKEXHybrid, const nsCString& aPQKexGroupName,
+    bool aHasAltSig, const nsCString& aAltSigAlgName)
     : mSecurityState(aSecurityState),
       mErrorCode(aErrorCode),
       mFailedCertChain(std::move(aFailedCertChain)),
@@ -70,7 +73,14 @@ TransportSecurityInfo::TransportSecurityInfo(
       mNegotiatedNPN(aNegotiatedNPN),
       mResumed(aResumed),
       mIsBuiltCertChainRootBuiltInRoot(aIsBuiltCertChainRootBuiltInRoot),
-      mPeerId(aPeerId) {}
+      mPeerId(aPeerId),
+      mNegotiatedGroup(aNegotiatedGroup),
+      mPqKex(aPqKex),
+      mAltSigDil3(aAltSigDil3),
+      mIsPQKEXHybrid(aIsPQKEXHybrid),
+      mPQKexGroupName(aPQKexGroupName),
+      mHasAltSig(aHasAltSig),
+      mAltSigAlgName(aAltSigAlgName) {}
 
 NS_IMPL_ISUPPORTS(TransportSecurityInfo, nsITransportSecurityInfo)
 
@@ -796,7 +806,8 @@ nsresult TransportSecurityInfo::Read(const nsCString& aSerializedSecurityInfo,
       aSignatureSchemeName, aProtocolVersion, aCertificateTransparencyStatus,
       aIsAcceptedEch, aIsDelegatedCredential, aOverridableErrorCategory,
       aMadeOCSPRequests, aUsedPrivateDNS, aIsEV, aNPNCompleted, aNegotiatedNPN,
-      aResumed, aIsBuiltCertChainRootBuiltInRoot, aPeerId));
+      aResumed, aIsBuiltCertChainRootBuiltInRoot, aPeerId, -1, false, false,
+      false, nsCString(), false, nsCString()));
   securityInfo.forget(aResult);
   return NS_OK;
 }
@@ -877,7 +888,8 @@ bool TransportSecurityInfo::DeserializeFromIPC(
       aSignatureSchemeName, aProtocolVersion, aCertificateTransparencyStatus,
       aIsAcceptedEch, aIsDelegatedCredential, aOverridableErrorCategory,
       aMadeOCSPRequests, aUsedPrivateDNS, aIsEV, aNPNCompleted, aNegotiatedNPN,
-      aResumed, aIsBuiltCertChainRootBuiltInRoot, aPeerId));
+      aResumed, aIsBuiltCertChainRootBuiltInRoot, aPeerId, -1, false, false,
+      false, nsCString(), false, nsCString()));
   *aResult = std::move(securityInfo);
   return true;
 }
@@ -1115,6 +1127,53 @@ TransportSecurityInfo::GetResumed(bool* aResumed) {
 NS_IMETHODIMP
 TransportSecurityInfo::GetPeerId(nsACString& aResult) {
   aResult.Assign(mPeerId);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetNegotiatedGroup(int32_t* aNegotiatedGroup) {
+  NS_ENSURE_ARG_POINTER(aNegotiatedGroup);
+  *aNegotiatedGroup = mNegotiatedGroup;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetPqKex(bool* aPqKex) {
+  NS_ENSURE_ARG_POINTER(aPqKex);
+  *aPqKex = mPqKex;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetAltSigDil3(bool* aAltSigDil3) {
+  NS_ENSURE_ARG_POINTER(aAltSigDil3);
+  *aAltSigDil3 = mAltSigDil3;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetIsPQKEXHybrid(bool* aIsPQKEXHybrid) {
+  NS_ENSURE_ARG_POINTER(aIsPQKEXHybrid);
+  *aIsPQKEXHybrid = mIsPQKEXHybrid;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetPqKexGroupName(nsACString& aPQKexGroupName) {
+  aPQKexGroupName = mPQKexGroupName;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetHasAltSig(bool* aHasAltSig) {
+  NS_ENSURE_ARG_POINTER(aHasAltSig);
+  *aHasAltSig = mHasAltSig;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+TransportSecurityInfo::GetAltSigAlgName(nsACString& aAltSigAlgName) {
+  aAltSigAlgName = mAltSigAlgName;
   return NS_OK;
 }
 
