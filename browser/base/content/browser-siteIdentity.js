@@ -995,52 +995,6 @@ var gIdentityHandler = {
         this._displayPQStatus(pqStatus);
       }
       return;
-
-      let pqStatus = "";
-      const isHybrid = secInfo.isPQKEXHybrid;
-      const kexName = secInfo.pqKexGroupName || secInfo.keaGroupName;
-      const hasAlt = secInfo.hasAltSig;
-      const altName = secInfo.altSigAlgName;
-
-      console.log(`DEBUG JS: isHybrid=${isHybrid}, kexName='${kexName}', hasAlt=${hasAlt}, altName='${altName}'`);
-      console.log(`DEBUG JS: secInfo.hasAltSig=${secInfo.hasAltSig}, secInfo.altSigAlgName='${secInfo.altSigAlgName}'`);
-      console.log(`DEBUG JS: secInfo.isPQKEXHybrid=${secInfo.isPQKEXHybrid}, secInfo.pqKexGroupName='${secInfo.pqKexGroupName}'`);
-      console.log(`DEBUG JS: freshSecInfo=${freshSecInfo}, gBrowser.securityUI.secInfo=${gBrowser.securityUI.secInfo}`);
-      console.log(`DEBUG JS: cached _secInfo=${this._secInfo}`);
-      if (this._secInfo && freshSecInfo) {
-        console.log(`DEBUG JS: cached hasAltSig=${this._secInfo.hasAltSig}, fresh hasAltSig=${secInfo.hasAltSig}`);
-      }
-
-      if (hasAlt && altName) {
-        pqStatus = `PQ-Safe (${altName})`;
-      } else if (isHybrid) {
-        pqStatus = `PQ (${kexName})`;
-      } else if (this._isSecureConnection) {
-        pqStatus = "Classical TLS";
-      }
-
-      if (pqStatus) {
-        // Get or create the PQ status element in the identity popup main view
-        let identityPopupMainView = document.getElementById("identity-popup-mainView");
-        if (!identityPopupMainView) {
-          return;
-        }
-
-        let pqStatusElement = document.getElementById("identity-popup-pq-status");
-        if (!pqStatusElement) {
-          pqStatusElement = document.createXULElement("description");
-          pqStatusElement.id = "identity-popup-pq-status";
-          pqStatusElement.style.fontSize = "smaller";
-          pqStatusElement.style.marginTop = "4px";
-          pqStatusElement.style.opacity = "0.8";
-          // Insert at the end of the main view
-          identityPopupMainView.appendChild(pqStatusElement);
-        }
-        pqStatusElement.textContent = `Post-Quantum: ${pqStatus}`;
-
-        // Add detailed alt signature information
-        this._addAltSignatureDetails(secInfo);
-      }
     } catch (e) {
       // Silently fail if PQ status cannot be determined
       console.error("Error updating PQ status:", e);
